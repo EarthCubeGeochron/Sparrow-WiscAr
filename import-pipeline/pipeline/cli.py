@@ -1,9 +1,9 @@
-from os import environ, listdir, path
+from os import environ, listdir, path, chdir
 from click import command, option, echo, secho, style, Group
 from pathlib import Path
 from sparrow import Database
 from sparrow.util import relative_path
-from sparrow import get_sparrow_app 
+from sparrow import get_sparrow_app
 
 from .importer import MAPImporter
 from .metadata import MetadataImporter
@@ -21,6 +21,7 @@ def get_data_directory():
         return
     p = Path(env)
     assert p.is_dir()
+    print(p)
     return p
 
 
@@ -33,7 +34,12 @@ def import_map(redo=False, stop_on_error=False, verbose=False, show_data=False):
     """
     Import WiscAr MAP spectrometer data (ArArCalc files) in bulk.
     """
-    data_path = get_data_directory()/"MAP-Irradiations"
+    data_base = get_data_directory()
+    data_path = data_base/"MAP-Irradiations"
+
+    # Make sure we are working in the data directory (for some reason this is important)
+    # TODO: fix in sparrow
+    chdir(str(data_base))
 
     app = get_sparrow_app()
     db = app.database
