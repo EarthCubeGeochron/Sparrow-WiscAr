@@ -1,8 +1,8 @@
 # Configures environment for WiscAr lab
 
 export PROJECT_DIR="$SPARROW_CONFIG_DIR"
-export SPARROW_PATH="$PROJECT_DIR/Sparrow"
-export SPARROW_CONFIG="$SPARROW_PATH/config/WiscAr.cfg"
+export SPARROW_PATH="$SPARROW_CONFIG_DIR/Sparrow"
+#export SPARROW_CONFIG="$SPARROW_PATH/config/WiscAr.cfg"
 export SPARROW_BACKUP_DIR="$PROJECT_DIR/backups"
 export SPARROW_LAB_NAME="WiscAr"
 
