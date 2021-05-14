@@ -5,7 +5,7 @@ from sparrow import Database
 from sparrow.util import relative_path
 from sparrow import get_sparrow_app
 
-from .importer import MAPImporter
+from .importer import MAPImporter, NoblesseImporter
 from .metadata import MetadataImporter
 
 cli = Group()
@@ -49,6 +49,28 @@ def import_map(redo=False, stop_on_error=False, verbose=False, show_data=False):
     # Clean up data inconsistencies
     fp = relative_path(__file__, "sql", "clean-data.sql")
     db.exec_sql(fp)
+
+@cli.command(name="import-noblesse")
+@option('--redo', '-r', is_flag=True, default=False)
+@option('--stop-on-error', is_flag=True, default=False)
+@option('--verbose', '-v', is_flag=True, default=False)
+@option('--show-data', '-S', is_flag=True, default=False)
+def import_noblesse(redo=False, stop_on_error=False, verbose=False, show_data=False):
+    """
+    Import WiscAr MAP spectrometer data (ArArCalc files) in bulk.
+    """
+    data_base = get_data_directory()
+    data_path = data_base/"Noblesse-test-data"
+
+    # Make sure we are working in the data directory (for some reason this is important)
+    # TODO: fix in sparrow
+    chdir(str(data_base))
+
+    app = get_sparrow_app()
+    db = app.database
+    importer = NoblesseImporter(db, verbose=verbose, show_data=show_data)
+    # TODO: fix for both xls and xlsx files
+    importer.iterfiles(data_path.glob("**/*.xlsx"), redo=redo)
 
 
 @cli.command(name="import-metadata")
