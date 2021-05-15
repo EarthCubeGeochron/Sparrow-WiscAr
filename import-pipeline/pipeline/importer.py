@@ -34,6 +34,20 @@ def split_error(v):
     error = float(a[1].strip())
     return value, error
 
+class NoblesseImporter(BaseImporter):
+    authority = "WiscAr"
+    file_type = "Noblesse file"
+
+    def import_datafile(self, fn, rec, **kwargs):
+        """
+        Import an original data file
+        """
+        echo("HELLO")
+        from IPython import embed
+        embed()
+        raise
+        yield None
+
 class MAPImporter(BaseImporter):
     authority = "WiscAr"
     file_type = "ArArCALC"

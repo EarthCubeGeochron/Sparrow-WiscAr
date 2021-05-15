@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Description: Import `WiscAr MAP` data from `SPARROW_DATA_DIR`
+# Description: Import `Noblesse` data from `SPARROW_DATA_DIR`
 
 # This script runs on the host system and kicks off the
 # import process within a docker container
@@ -14,4 +14,4 @@ sparrow compose run \
   -v "$SPARROW_DATA_DIR:/Data:ro" \
   -v "$import_pipeline:/pipeline" \
   backend \
-  python3 -m pipeline import-map $@
+  python3 -m pipeline import-noblesse $@
