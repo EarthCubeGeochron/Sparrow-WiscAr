@@ -87,7 +87,3 @@ def import_metadata(verbose: bool = False):
     app = get_sparrow_app()
     app = sparrow.get_app()
     importer = MetadataImporter(app, fn, verbose=verbose)
-
-
-if __name__ == "__main__":
-    cli()
