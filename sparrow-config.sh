@@ -1,7 +1,6 @@
 # Configures environment for WiscAr lab
 
 export PROJECT_DIR="$SPARROW_CONFIG_DIR"
-
 export SPARROW_BACKUP_DIR="$PROJECT_DIR/backups"
 export SPARROW_LAB_NAME="WiscAr"
 export SPARROW_VERSION=">=2.0.0.beta14"
