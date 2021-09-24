@@ -57,7 +57,7 @@ def import_map(redo=False, stop_on_error=False, verbose=False, show_data=False):
 @option('--show-data', '-S', is_flag=True, default=False)
 def import_noblesse(redo=False, stop_on_error=False, verbose=False, show_data=False):
     """
-    Import WiscAr MAP spectrometer data (ArArCalc files) in bulk.
+    Import WiscAr Noblesse spectrometer data files in bulk.
     """
     data_base = get_data_directory()
     data_path = data_base/"Noblesse-test-data"
@@ -71,6 +71,7 @@ def import_noblesse(redo=False, stop_on_error=False, verbose=False, show_data=Fa
     importer = NoblesseImporter(db, verbose=verbose, show_data=show_data)
     # TODO: fix for both xls and xlsx files
     importer.iterfiles(data_path.glob("**/*.xlsx"), redo=redo)
+    importer.iterfiles(data_path.glob("**/*.xls"), redo=redo)
 
 
 @cli.command(name="import-metadata")
