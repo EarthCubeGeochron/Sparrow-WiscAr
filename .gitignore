@@ -1,3 +1,4 @@
 Data
 backups
 sparrow-config.overrides.sh
+.pytest_cache
