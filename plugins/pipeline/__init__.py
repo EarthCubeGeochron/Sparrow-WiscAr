@@ -5,6 +5,7 @@ from sparrow.util import relative_path
 import sparrow
 from sparrow import get_sparrow_app
 
+from sparrow.ext.pychron import PyChronImporter
 from .importer import MAPImporter, NoblesseImporter
 from .metadata import MetadataImporter
 
@@ -87,3 +88,11 @@ def import_metadata(verbose: bool = False):
     app = get_sparrow_app()
     app = sparrow.get_app()
     importer = MetadataImporter(app, fn, verbose=verbose)
+
+
+@sparrow.task(name="import-pychron")
+def pychron_import_command(redo: bool = False):
+    """Import PyChron Interpreted Age files."""
+    app = sparrow.get_app()
+    importer = PyChronImporter(app, verbose=True)
+    importer.import_all(redo=redo)
