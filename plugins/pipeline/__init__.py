@@ -48,7 +48,7 @@ def import_map(
     importer.iterfiles(data_path.glob("**/*.xls"), redo=redo)
 
     # Clean up data inconsistencies
-    fp = relative_path(__file__, "sql", "clean-data.sql")
+    #fp = relative_path(__file__, "sql", "clean-data.sql")
     db.exec_sql(fp)
 
 
@@ -73,6 +73,7 @@ def import_noblesse(
     importer = NoblesseImporter(app, verbose=verbose, show_data=show_data)
     # TODO: fix for both xls and xlsx files
     importer.iterfiles(data_path.glob("**/*.xlsx"), redo=redo)
+    importer.iterfiles(data_path.glob("**/*.xls"), redo=redo)
 
 
 @sparrow.task()

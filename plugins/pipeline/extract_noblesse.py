@@ -63,8 +63,8 @@ def extract_summary(df):
             .dropna(axis=1, how='all'))
     return summary
 
-def extract_nob_tables(df):
-    df = read_excel('//wsl$/Ubuntu-20.04/home/bbruck/Sparrow-WiscAr/Data/Noblesse-test-data/Complete data_Cooper_biotite_Aug2019.xlsx')
+def extract_noblesse_tables(fn):
+    df = read_excel(fn)
     df.columns = range(df.columns.size)
     #get index for column labels
     ixcl = value_index(df, "N")
@@ -73,4 +73,9 @@ def extract_nob_tables(df):
     label.iloc[0] = 'omit' 
     df = df.drop([ixcl[0]-1,ixcl[0],ixcl[0]+1])
 
-    sample
+    
+
+def test_read(fn):
+    df = read_excel(fn)
+    grab_cell = df.iloc[0,0]
+    return grab_cell
