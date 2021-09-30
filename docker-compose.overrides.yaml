@@ -1,11 +1,10 @@
 version: "3.6"
 services:
-  gateway:
-    networks:
-      - default
-      - sparrowdataorg_default
-networks:
-  default:
-    driver: bridge
-  sparrowdataorg_default:
-    external: true
+  backend:
+    environment:
+      - GITHUB_TOKEN
+      - GITHUB_USER
+  worker:
+    environment:
+      - GITHUB_TOKEN
+      - GITHUB_USER
