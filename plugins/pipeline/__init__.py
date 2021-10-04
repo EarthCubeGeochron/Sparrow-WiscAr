@@ -5,6 +5,7 @@ from sparrow.util import relative_path
 import sparrow
 from sparrow import get_sparrow_app
 
+from sparrow.ext.pychron import PyChronImporter
 from .importer import MAPImporter, NoblesseImporter
 from .metadata import MetadataImporter
 
@@ -47,7 +48,7 @@ def import_map(
     importer.iterfiles(data_path.glob("**/*.xls"), redo=redo)
 
     # Clean up data inconsistencies
-    fp = relative_path(__file__, "sql", "clean-data.sql")
+    #fp = relative_path(__file__, "sql", "clean-data.sql")
     db.exec_sql(fp)
 
 
@@ -72,6 +73,7 @@ def import_noblesse(
     importer = NoblesseImporter(app, verbose=verbose, show_data=show_data)
     # TODO: fix for both xls and xlsx files
     importer.iterfiles(data_path.glob("**/*.xlsx"), redo=redo)
+    importer.iterfiles(data_path.glob("**/*.xls"), redo=redo)
 
 
 @sparrow.task()
@@ -87,3 +89,11 @@ def import_metadata(verbose: bool = False):
     app = get_sparrow_app()
     app = sparrow.get_app()
     importer = MetadataImporter(app, fn, verbose=verbose)
+
+
+@sparrow.task(name="import-pychron")
+def pychron_import_command(redo: bool = False):
+    """Import PyChron Interpreted Age files."""
+    app = sparrow.get_app()
+    importer = PyChronImporter(app, verbose=True)
+    importer.import_all(redo=redo)

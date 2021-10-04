@@ -8,6 +8,7 @@ from sparrow.import_helpers import BaseImporter, SparrowImportError
 from IPython import embed
 
 from .extract_tables import extract_data_tables
+from .extract_noblesse import test_read
 
 def print_dataframe(df):
     secho(str(df.fillna(''))+'\n', dim=True)
@@ -43,61 +44,11 @@ class NoblesseImporter(BaseImporter):
         """
         Import an original data file
         """
-
-        mod_time = datetime.fromtimestamp(path.getmtime(fn))
-
-        try:
-            incremental_heating, info, results = extract_data_tables(fn)
-        except Exception as exc:
-            raise SparrowImportError(str(exc))
-        if self.show_data:
-            print_dataframe(incremental_heating)
-            print_dataframe(info)
-            print_dataframe(results.transpose())
-
-        sample = self.sample(name=info.pop('Sample'))
-        target = self.material(info.pop('Material'))
         instrument = self.db.get_or_create(
             self.m.instrument,
             name="MAP 215-50")
-        method = self.method("Ar/Ar "+info.pop("Type"))
-        self.add(sample, target, instrument, method)
-        self.db.session.flush()
-
-        session = self.db.get_or_create(
-            self.m.session,
-            sample_id=sample.id,
-            instrument=instrument.id,
-            technique=method.id,
-            date=mod_time,
-            target=target.id)
-        session.date_precision = "day"
-        self.add(session)
-        self.db.session.flush()
-
-
-        info = self.general_info(session, info)
-        session.data = info.to_dict()
-
-        for i, step in enumerate(incremental_heating.iterrows()):
-            self.import_heating_step(i, step, session, incremental_heating)
-
-        # Import results table
-        try:
-            res = results.loc["Age Plateau"]
-            self.import_age_plateau(session, res)
-        except KeyError:
-            pass
-
-        res = results.loc["Total Fusion Age"]
-        self.import_fusion_age(session, res)
-
-        # This function returns the top-level
-        # record that should be linked to the datafile
-        self.db.session.flush()
-        yield session
-
-    
+        line = test_read(fn)
+        print(line)
 
 class MAPImporter(BaseImporter):
     authority = "WiscAr"
