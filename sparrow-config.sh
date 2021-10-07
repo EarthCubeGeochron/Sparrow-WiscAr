@@ -17,7 +17,7 @@ export COMPOSE_PROJECT_NAME="WiscAr"
 
 # We have to set some environment variables for the Sparrow PyChron importer
 export SPARROW_COMPOSE_OVERRIDES="$SPARROW_CONFIG_DIR/docker-compose.overrides.yaml"
-
+export SPARROW_DOMAIN="wiscar-sparrow.geoscience.wisc.edu"
 export SPARROW_DATA_DIR="$PROJECT_DIR/Data"
 
 overrides="$SPARROW_CONFIG_DIR/sparrow-config.overrides.sh"
