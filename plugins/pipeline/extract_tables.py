@@ -1,5 +1,7 @@
 from pandas import read_excel, Series, concat
+from IPython import embed
 import numpy as N
+
 
 def value_index(df, value, integer=False):
     for i, row in df.iterrows():
@@ -16,14 +18,21 @@ def extract_results_table(df):
     results = (df.iloc[ixc[0]:,col:]
             .dropna(axis=0, how='all')
             .dropna(axis=1, how='all'))
+    
     results = results.rename(columns=results.iloc[0]).iloc[2:]
 
     ## Extract total fusion data
-
+    
     try:
         plateau_comment = results.iloc[0,0].split('\n')[1]
     except IndexError:
         plateau_comment = None
+    except:
+        #This means its the old format, so we need to drop columns to isolate the Results we're interested in.
+        results = (results.iloc[:,:9]
+                .dropna(axis=0, how='all'))
+        plateau_comment = None
+            
     results.iloc[0,0] = 'Age Plateau'
 
     ar = '39Ar(k)'
@@ -35,32 +44,33 @@ def extract_results_table(df):
     ix = results.index.get_loc('Total Fusion Age')
     age_plateau = results.iloc[:ix,:]
     total_fusion = results.iloc[ix:,:]
-
+    
     ix = ('Total Fusion Age', ar)
     val = total_fusion.loc[ix]
     total_fusion.loc[ix] = N.nan
     total_fusion.loc['Total Fusion Age', 'n_steps'] = val
     total_fusion.loc[:,'Comment'] = None
-
+    
     table_parts = [total_fusion]
-
+    
     plateau_confidence = None
+    
     if plateau_comment != 'Cannot Calculate':
         # Get n_steps out from 39Ar percentage
         val = age_plateau.loc[N.nan, ar]
         age_plateau.loc[N.nan, ar] = N.nan
         age_plateau.loc['Age Plateau', 'n_steps'] = val
-
+    
         # Extract confidence on plateau fit
         # Find the first matching measure of confidence
-        for v in ["2σ Confidence Limit","1σ Confidence Limit","Statistical T Ratio"]:
+        for v in ["2σ Confidence Limit","1σ Confidence Limit","Statistical T Ratio", "Statistical T ratio"]:
             ix = value_index(age_plateau, v, integer=True)
             if ix is not None: break
         loc = N.index_exp[ix[0]:ix[0]+2,ix[1]-1:ix[1]+1]
         conf = age_plateau.iloc[loc].copy()
         age_plateau.iloc[loc] = N.nan
         age_plateau.loc[:,'Comment'] = plateau_comment
-
+        
         conf = (conf.set_index(conf.columns[1])
                     .transpose())
         conf.columns.name = None
@@ -69,6 +79,7 @@ def extract_results_table(df):
 
         table_parts.insert(0, age_plateau)
 
+    
     for a in table_parts:
         errors = a.iloc[2:].copy().transpose().dropna(how='all')
         a.insert(4, errors.columns[0], errors.iloc[0,0])
@@ -95,11 +106,12 @@ def extract_incremental_heating_table(df):
     # Get the upper-left index of several subtables
     ixa = value_index(df, "Incremental\nHeating")
     ixb = value_index(df, "Information\non Analysis")
-
+    
     # Clean the Incremental Heating table
     ih = (df.iloc[ixa[0]:ixb[0],:]
         .dropna(axis=0, how='all')
         .dropna(axis=1, how='all'))
+    
     ih.iloc[0,1:3] = ['temperature', 'in_plateau']
     # Get rid of second line of labels
     ih.iloc[0] = ih.iloc[0].str.split('\n').str[0]
@@ -126,12 +138,20 @@ def extract_information_table(df):
 
     # Clean Information on Analysis
     col = df.columns.get_loc(ix[1])
-    info = df.iloc[ix[0]+1:,col:col+1].dropna()
-    # Expand key/value pairs
-    info = info.iloc[:,0].str.split("=", n=1, expand=True)
-    info.iloc[:,0] = info.iloc[:,0].str.strip()
-    info.iloc[:,1] = info.iloc[:,1].str.strip()
-
+    
+    try:
+        info = df.iloc[ix[0]+1:,col:col+1].dropna() 
+        
+        # Expand key/value pairs
+        info = info.iloc[:,0].str.split("=", n=1, expand=True)
+        info.iloc[:,0] = info.iloc[:,0].str.strip()
+        info.iloc[:,1] = info.iloc[:,1].str.strip()
+    except:
+        info = df.iloc[ix[0]+1:,col:col+2].dropna()
+        info.iloc[:,0] = info.iloc[:,0].str.strip()
+        info.iloc[:,1] = info.iloc[:,1].str.strip()
+        info.columns = range(info.shape[1])
+    
     info.set_index(0, inplace=True)
     info.index.names = ['key']
     info.columns = ['value']
@@ -139,7 +159,13 @@ def extract_information_table(df):
 
 def extract_data_tables(fn):
     # Create a `Pandas` representation of the entire first sheet of the spreadsheet
-    df = read_excel(fn, sheet_name="Incremental Heating Summary")
+    try:
+        df = read_excel(fn, sheet_name="Incremental Heating Summary")
+    except:
+        df = read_excel(fn, sheet_name="Data Tables")
+        ix = value_index(df, "Incremental\nHeating")
+        df = df.loc[:,ix[1]:]
+        df = df.reset_index(drop=True)
     heating = extract_incremental_heating_table(df)
 
     T = heating['temperature']
@@ -152,4 +178,6 @@ def extract_data_tables(fn):
     info = extract_information_table(df)
     info['Type'] = type
     results = extract_results_table(df)
+
+
     return heating, info, results
