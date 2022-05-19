@@ -8,7 +8,7 @@ from sparrow.import_helpers import BaseImporter, SparrowImportError
 from IPython import embed
 
 from .extract_tables import extract_data_tables
-from .extract_noblesse import test_read
+from .extract_noblesse import separate_samples, extract_noblesse_tables, test_read
 
 def print_dataframe(df):
     secho(str(df.fillna(''))+'\n', dim=True)
@@ -44,11 +44,56 @@ class NoblesseImporter(BaseImporter):
         """
         Import an original data file
         """
-        instrument = self.db.get_or_create(
-            self.m.instrument,
-            name="MAP 215-50")
-        line = test_read(fn)
-        print(line)
+        try:
+            sample_set, table_labels = separate_samples(fn)
+            for i in range(len(sample_set)):
+                try:
+                    info, data, results = extract_noblesse_tables(sample_set[i])
+                except:
+                    print("Noblesse Importer Error")
+                try:
+                    data.columns = table_labels
+                except:
+                    pass
+                if self.show_data:
+                    print_dataframe(info)
+                    print_dataframe(data)
+                    print_dataframe(results)
+                
+                # Set Instrument
+                instrument = self.db.get_or_create(
+                    self.m.instrument,
+                    name="Nu Instruments Noblesse")
+
+                # Get Sample Info
+                sample = self.sample(name=info.pop('Sample'))
+                target = self.material(info.pop('Material'))
+                identifier = info.pop('Identifier')
+                irradiation = identifier[1][0:5]
+                identifier = self.identifier(name=identifier)
+                irradiation = self.irradiation(name=irradiation)
+
+                # Set Session Info
+                session = self.db.get_or_create(
+                    self.m.session,
+                    sample_id=sample.id,
+                    instrument=instrument.id,
+                    technique=method.id,
+                    date=mod_time,
+                    target=target.id)
+                session.date_precision = "day"
+                self.add(session)
+                self.db.session.flush()
+                
+                # Get Data 
+                 
+                
+        except:
+            pass
+
+        
+
+            
 
 class MAPImporter(BaseImporter):
     authority = "WiscAr"
@@ -148,32 +193,53 @@ class MAPImporter(BaseImporter):
         analysis = self.add_analysis(session, "General information")
         self.attribute(analysis, "Irradiation ID", info.pop('Project'))
         # J-value
-        value, error = split_error(info.pop('J'))
-        self.datum(analysis, "J-value", value, error=error)
+        try:
+            value, error = split_error(info.pop('J'))
+            self.datum(analysis, "J-value", value, error=error)
+        except:
+            self.datum(analysis, "J-value", info.pop('J-value'))
+      
         # Location
         self.attribute(analysis, "Irradiation location", info.pop('Location'))
         # Analyst
         self.attribute(analysis, "Analyst", info.pop('Analyst'))
-        self.attribute(analysis, "Mass Discrimination Law", info.pop('Mass Discrimination Law'))
+        try:
+            self.attribute(analysis, "Mass Discrimination Law", info.pop('Mass Discrimination Law'))
+        except:
+            self.attribute(analysis, "Mass Discrimination Law", 'None')
 
         # FC or AC tuff age
-        for c in ['FC', 'AC']:
-            try:
-                std = info.pop(c)
-            except KeyError:
-                continue
-            value, error = split_error(std)
-            # Correct inconsistencies in our method
-            if value > 28 and value < 29:
-                c = 'FC'
-            if value > 1.1 and value < 1.2:
-                c = 'AC'
+        try:
+            for c in ['FC', 'AC', 'FCs']:
+                try:
+                    std = info.pop(c)
+                except KeyError:
+                    continue
+                value, error = split_error(std)
+                # Correct inconsistencies in our method
+                if value > 28 and value < 29:
+                    c = 'FC'
+                if value > 1.1 and value < 1.2:
+                    c = 'AC'
 
+                self.constant(analysis, c+" standard age",
+                    value,
+                    error=error,
+                    unit='Ma')
+                break
+        except:
+            std = info.pop('Standard')
+            # Correct inconsistencies in our method
+            if std > 28 and std < 29:
+                c = 'FC'
+            if std > 1.1 and std < 1.2:
+                c = 'AC'
+            error='None'
             self.constant(analysis, c+" standard age",
-                value,
-                error=error,
-                unit='Ma')
-            break
+                    value,
+                    error=error,
+                    unit='Ma')
+
         self.db.session.flush()
         return info
 

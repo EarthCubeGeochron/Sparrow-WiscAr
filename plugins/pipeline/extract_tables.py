@@ -1,3 +1,5 @@
+import string
+from click import pass_context
 from pandas import read_excel, Series, concat
 from IPython import embed
 import numpy as N
@@ -99,7 +101,12 @@ def extract_results_table(df):
     cols = ['MSWD', *results.columns[-2:]]
     results = results.drop(columns=cols).assign(
         **{k:results[k] for k in cols})
-
+    try:   
+        results.iloc[:,3] = results.iloc[:,3].str.replace("± ","").astype(float)
+        results.iloc[:,4] = results.iloc[:,4].str.replace("± ","").astype(float)
+        results.iloc[:,5] = results.iloc[:,5].str.replace("± ","").astype(float)
+    except:
+        pass
     return results
 
 def extract_incremental_heating_table(df):
@@ -108,7 +115,7 @@ def extract_incremental_heating_table(df):
     ixb = value_index(df, "Information\non Analysis")
     
     # Clean the Incremental Heating table
-    ih = (df.iloc[ixa[0]:ixb[0],:]
+    ih = (df.iloc[ixa[0]:ixb[0],:15]
         .dropna(axis=0, how='all')
         .dropna(axis=1, how='all'))
     
@@ -117,6 +124,7 @@ def extract_incremental_heating_table(df):
     ih.iloc[0] = ih.iloc[0].str.split('\n').str[0]
     # re-add percent to avoid confusion
     ih.iloc[0,10:12] = ih.iloc[0,10:12]+" [%]"
+    
 
     # Promote first row to column labels
     ih.columns = ih.iloc[0]
@@ -130,6 +138,12 @@ def extract_incremental_heating_table(df):
     ix = ih['in_plateau'].isnull()
     ih.loc[~ix,'in_plateau'] = True
     ih.loc[ix,'in_plateau'] = False
+
+    #Strip ± from old format values
+    try:
+        ih.iloc[:,8] = ih.iloc[:,8].str.replace("± ","").astype(float)
+    except:
+        pass
     return ih
 
 def extract_information_table(df):
@@ -141,6 +155,16 @@ def extract_information_table(df):
     
     try:
         info = df.iloc[ix[0]+1:,col:col+1].dropna() 
+
+        #check for required text in first four columns, and add if missing
+        if type(info.iloc[0,0]) != str:
+            info.iloc[0,0] = str(info.iloc[0,0])
+        
+        if "Sample" not in info.iloc[0,0]: 
+            info.iloc[0,0] = "Sample = " + info.iloc[0,0]
+            info.iloc[1,0] = "Material = " + info.iloc[1,0]
+            info.iloc[2,0] = "Location = " + info.iloc[2,0]
+            info.iloc[3,0] = "Analyst = " + info.iloc[3,0]
         
         # Expand key/value pairs
         info = info.iloc[:,0].str.split("=", n=1, expand=True)
@@ -148,13 +172,13 @@ def extract_information_table(df):
         info.iloc[:,1] = info.iloc[:,1].str.strip()
     except:
         info = df.iloc[ix[0]+1:,col:col+2].dropna()
-        info.iloc[:,0] = info.iloc[:,0].str.strip()
-        info.iloc[:,1] = info.iloc[:,1].str.strip()
         info.columns = range(info.shape[1])
+        
     
     info.set_index(0, inplace=True)
     info.index.names = ['key']
     info.columns = ['value']
+    
     return info.loc[:,'value']
 
 def extract_data_tables(fn):
