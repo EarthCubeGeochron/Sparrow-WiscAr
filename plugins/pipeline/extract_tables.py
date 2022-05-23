@@ -173,6 +173,9 @@ def extract_information_table(df):
     except:
         info = df.iloc[ix[0]+1:,col:col+2].dropna()
         info.columns = range(info.shape[1])
+        if type(info.iloc[0,1]) != str:
+            info.iloc[0,1] = str(info.iloc[0,1])
+        
         
     
     info.set_index(0, inplace=True)
